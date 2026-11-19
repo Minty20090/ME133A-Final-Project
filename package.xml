@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>hw6code</name>
+  <name>me133a_final_project</name>
   <version>0.0.0</version>
   <description>The 133a HW6 Code</description>
   <maintainer email="robot@todo.todo">robot</maintainer>
@@ -11,6 +11,10 @@
   <depend>geometry_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
+
+  <exec_depend>joint_state_publisher_gui</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>rviz2</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

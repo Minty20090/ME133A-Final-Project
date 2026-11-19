@@ -1,0 +1,13 @@
+cd ~/robotws
+colcon build --symlink-install
+source install/setup.bash
+
+cd ~/robotws/src/packages/utils/rviz
+ros2 run rviz2 rviz2 -d viewurdf.rviz
+
+cd ~/robotws/src/packages/ME133A-Final-Project/urdf/
+ros2 run robot_state_publisher robot_state_publisher atlas_v5.urdf
+
+
+
+ros2 run me133a_final_project main

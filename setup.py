@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 from glob import glob
 
-package_name = 'hw6code'
+package_name = 'me133a_final_project'
 
 # Create a mapping of other files to be copied in the src -> install
 # build.  This is a list of tuples.  The first entry in the tuple is
@@ -10,7 +10,9 @@ package_name = 'hw6code'
 otherfiles = [
     ('share/' + package_name + '/launch', glob('launch/*')),
     ('share/' + package_name + '/urdf',   glob('urdf/*')),
-    ('share/' + package_name + '/meshes/atlas', glob('meshes/atlas/*')),
+    ('share/' + package_name + '/meshes_unplugged', glob('meshes_unplugged/*')),
+    ('share/' + package_name + '/materials/textures',
+        glob('materials/textures/*.jpg') + glob('materials/textures/*.png')),
 ]
 
 
@@ -32,7 +34,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'main      = ME133A-Final-Project.main:main',
+            'main = me133a_final_project.main:main',
         ],
     },
 )

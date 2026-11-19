@@ -1,11 +1,11 @@
-"""Launch HW6 P4
+"""Launch HW6 P3
 
-   ros2 launch hw6code hw6p4.launch.py
+   ros2 launch hw6code hw6p3.launch.py
 
 This should start
   1) RVIZ, ready to view the robot
   2) The robot_state_publisher to broadcast the robot model
-  3) The HW6 P4 code to move the joints
+  3) The HW6 P3 code to move the joints
 
 """
 
@@ -34,7 +34,7 @@ def generate_launch_description():
     rvizcfg = os.path.join(pkgdir('utils'), 'rviz', 'viewurdfplus.rviz')
 
     # Locate the URDF file.
-    urdf = os.path.join(pkgdir('hw6code'), 'urdf', 'sixDOF_Obstacle.urdf')
+    urdf = os.path.join(pkgdir('me133a_final_project'), 'urdf', 'atlas_v5.urdf')
 
     # Load the robot's URDF file (XML).
     with open(urdf, 'r') as file:
@@ -64,8 +64,8 @@ def generate_launch_description():
     # Configure a node for the joint trajectory
     node_trajectory = Node(
         name       = 'trajectory', 
-        package    = 'hw6code',
-        executable = 'hw6p4',
+        package    = 'me133a_final_project',
+        executable = 'main',
         output     = 'screen')
 
 

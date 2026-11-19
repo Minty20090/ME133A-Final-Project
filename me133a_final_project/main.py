@@ -1,18 +1,3 @@
-'''hw6p3sol.py
-
-   This is a skeleton for HW6 Problem 3.  PLEASE EDIT (SEARCH FOR FIXME)!
-
-   This combines position and orientation movements.  It moves (a)
-   from the initial position to the starting point, then (b) up/down
-   while rotating the tip (cube).
-
-   Node:        /trajectory
-   Publish:     /joint_states           sensor_msgs/JointState
-                /pose                   geometry_msgs.msg/PoseStamped
-                /twist                  geometry_msgs.msg/TwistStamped
-
-'''
-
 import rclpy
 import numpy as np
 import tf2_ros
@@ -54,27 +39,70 @@ class TrajectoryNode(Node):
         # INITIALIZE YOUR TRAJECTORY DATA!
 
         # Define the list of joint names MATCHING THE JOINT NAMES IN THE URDF!
-        self.jointnames=['theta1','theta2','theta3','theta4','theta5','theta6']
 
-        # Set up the kinematic chain object.
-        self.chain = KinematicChain(self, 'world', 'tip', self.jointnames)
+        # unused joints = neck_ry, r_hand_sword
+        self.l_leg_joints = [
+            "back_bkx",
+            "back_bky",
+            "back_bkz",
+            "l_leg_akx",
+            "l_leg_aky",
+            "l_leg_hpx",
+            "l_leg_hpy",
+            "l_leg_hpz",
+            "l_leg_kny",
+        ]
+        self.l_leg_chain = KinematicChain(self, "pelvis", "l_foot", self.l_leg_joints)
+
+        self.l_arm_joints = [
+            "back_bkx",
+            "back_bky",
+            "back_bkz",
+            "l_arm_elx",
+            "l_arm_ely",
+            "l_arm_shx",
+            "l_arm_shz",
+            "l_arm_wrx",
+            "l_arm_wry",
+            "l_arm_wry2"
+        ]
+        self.l_arm_chain = KinematicChain(self, "pelvis", "l_hand", self.l_arm_joints)
+
+        self.r_arm_joints = [
+            "back_bkx",
+            "back_bky",
+            "back_bkz",
+            "r_arm_elx",
+            "r_arm_ely",
+            "r_arm_shx",
+            "r_arm_shz",
+            "r_arm_wrx",
+            "r_arm_wry",
+            "r_arm_wry2"
+        ]
+        self.r_arm_chain = KinematicChain(self, "pelvis", "sword", self.r_arm_joints)
+    
+        self.r_leg_joints = [
+            "back_bkx",
+            "back_bky",
+            "back_bkz",
+            "r_leg_akx",
+            "r_leg_aky",
+            "r_leg_hpx",
+            "r_leg_hpy",
+            "r_leg_hpz",
+            "r_leg_kny",
+        ]
+        self.r_leg_chain = KinematicChain(self, "pelvis", "r_foot", self.r_leg_joints)
+
+        
+        
 
         # Define the matching initial joint/task positions.
-        self.q0 = np.radians(np.array([0, 90, -90, 0, 0, 0]))
+        self.q0 = np.radians(np.zeros(len(self.jointnames)))
         #self.p0 = np.array([0.0, 0.55, 1.0])
         #self.R0 = Reye()
-        (self.p0, self.R0, _, _) = self.chain.fkin(self.q0)
-
-        # Define the other points.
-        self.plow  = np.array([0.0, 0.5, 0.3])
-        self.phigh = np.array([0.0, 0.5, 0.9])
-
-        # FIXME: WHAT ELSE DO WE NEED TO INITIALIZE FOR THE INVERSE KINEMATICS?
-        self.qc = self.q0.copy()
-        self.qcdot = np.array([0,0,0,0,0,0])
-        self.error = np.array([0,0,0,0,0,0])
-
-        self.lam = 10
+        (self.p0, self.R0, _, _) = self.r_leg_chain.fkin(self.q0)
 
 
         ##############################################################
@@ -122,61 +150,6 @@ class TrajectoryNode(Node):
             self.future.set_result("Trajectory has ended")
             return
 
-        # Decide which phase we are in:
-        if self.t < 3.0:
-            # Approach movement:
-            (s0, s0dot) = goto(self.t, 3.0, 0.0, 1.0)
-
-            pd = self.p0 + (self.plow - self.p0) * s0
-            vd =           (self.plow - self.p0) * s0dot
-
-            Rd = Rotz(-pi/2 * s0)
-            wd = nz() * (-pi/2 * s0dot)
-
-        else:
-            # Pre-compute the path variables.  To show different
-            # options, we compute the position path variable using
-            # sinusoids and the orientation variable via splines.
-            t  = (self.t - 3.0)
-            t1 = (self.t - 3.0) % 8.0
-    
-            sp    =      - cos(pi/2 * t)
-            spdot = pi/2 * sin(pi/2 * t)
-
-            if t1 < 4.0:  (sR, sRdot) = goto(t1,     4.0, -1.0,  1.0)
-            else:         (sR, sRdot) = goto(t1-4.0, 4.0,  1.0, -1.0)
-
-            # Use the path variables to compute the trajectory.
-            pd = 0.5*(self.phigh+self.plow) + 0.5*(self.phigh-self.plow) * sp
-            vd =                            + 0.5*(self.phigh-self.plow) * spdot
-
-            Rd = Rotz(pi/2 * sR)
-            wd = nz() * (pi/2 * sRdot)
-
-        
-        # FIXME: IMPLEMENT THE FULL 6 DOF INVERSE KINEMATICS.
-        (_, _, Jv, Jw) = self.chain.fkin(self.qc)
-        J = np.vstack((Jv, Jw))
-
-        xrdot = np.concatenate((vd, wd)) + self.lam * self.error
-        self.qcdot = np.linalg.pinv(J) @ xrdot
-        self.qc += self.qcdot * self.dt
-        (ptip, Rtip, _, _) = self.chain.fkin(self.qc)
-
-        p_error = pd - ptip
-        xa = Rtip[:, 0]
-        xb = Rd[:, 0]
-        ya = Rtip[:, 1]
-        yb = Rd[:, 1]
-        za = Rtip[:, 2]
-        zb = Rd[:, 2]
-
-        R_error = 0.5 * (np.cross(xa,xb) + np.cross(ya,yb) + np.cross(za,zb))
-
-        self.error = np.concatenate((p_error, R_error))
-
-        qc = self.qc
-        qcdot = self.qcdot
 
         ##############################################################
         # Finish by publishing the data (joint and task commands).
