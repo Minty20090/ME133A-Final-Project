@@ -42,9 +42,6 @@ class TrajectoryNode(Node):
 
         # unused joints = neck_ry, r_hand_sword
         self.l_leg_joints = [
-            "back_bkx",
-            "back_bky",
-            "back_bkz",
             "l_leg_akx",
             "l_leg_aky",
             "l_leg_hpx",
@@ -83,9 +80,6 @@ class TrajectoryNode(Node):
         self.r_arm_chain = KinematicChain(self, "pelvis", "sword", self.r_arm_joints)
     
         self.r_leg_joints = [
-            "back_bkx",
-            "back_bky",
-            "back_bkz",
             "r_leg_akx",
             "r_leg_aky",
             "r_leg_hpx",
