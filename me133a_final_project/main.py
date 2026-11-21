@@ -40,52 +40,63 @@ class TrajectoryNode(Node):
 
         # Define the list of joint names MATCHING THE JOINT NAMES IN THE URDF!
 
-        # unused joints = neck_ry, r_hand_sword
+        # to get rid of joint state publisher error
+        self.all_joints = [
+            "back_bkx", "back_bky", "back_bkz",
+            "l_arm_elx", "l_arm_ely", "l_arm_shx", "l_arm_shz",
+            "l_arm_wrx", "l_arm_wry", "l_arm_wry2",
+            "l_leg_akx", "l_leg_aky", "l_leg_hpx", "l_leg_hpy",
+            "l_leg_hpz", "l_leg_kny", "neck_ry",
+            "r_arm_elx", "r_arm_ely", "r_arm_shx", "r_arm_shz",
+            "r_arm_wrx", "r_arm_wry", "r_arm_wry2",
+            "r_leg_akx", "r_leg_aky", "r_leg_hpx", "r_leg_hpy",
+            "r_leg_hpz", "r_leg_kny",
+        ]
         self.l_leg_joints = [
-            "l_leg_akx",
-            "l_leg_aky",
+            "l_leg_hpz",
             "l_leg_hpx",
             "l_leg_hpy",
-            "l_leg_hpz",
             "l_leg_kny",
+            "l_leg_aky",
+            "l_leg_akx",
         ]
         self.l_leg_chain = KinematicChain(self, "pelvis", "l_foot", self.l_leg_joints)
 
         self.l_arm_joints = [
-            "back_bkx",
-            "back_bky",
             "back_bkz",
-            "l_arm_elx",
-            "l_arm_ely",
-            "l_arm_shx",
+            "back_bky",
+            "back_bkx",
             "l_arm_shz",
-            "l_arm_wrx",
+            "l_arm_shx",
+            "l_arm_ely",
+            "l_arm_elx",
             "l_arm_wry",
-            "l_arm_wry2"
+            "l_arm_wrx",
+            "l_arm_wry2",
         ]
         self.l_arm_chain = KinematicChain(self, "pelvis", "l_hand", self.l_arm_joints)
 
         self.r_arm_joints = [
-            "back_bkx",
-            "back_bky",
             "back_bkz",
-            "r_arm_elx",
-            "r_arm_ely",
-            "r_arm_shx",
+            "back_bky",
+            "back_bkx",
             "r_arm_shz",
-            "r_arm_wrx",
+            "r_arm_shx",
+            "r_arm_ely",
+            "r_arm_elx",
             "r_arm_wry",
-            "r_arm_wry2"
+            "r_arm_wrx",
+            "r_arm_wry2",
         ]
         self.r_arm_chain = KinematicChain(self, "pelvis", "sword", self.r_arm_joints)
     
         self.r_leg_joints = [
-            "r_leg_akx",
-            "r_leg_aky",
+            "r_leg_hpz",
             "r_leg_hpx",
             "r_leg_hpy",
-            "r_leg_hpz",
             "r_leg_kny",
+            "r_leg_aky",
+            "r_leg_akx",
         ]
         self.r_leg_chain = KinematicChain(self, "pelvis", "r_foot", self.r_leg_joints)
 
@@ -93,12 +104,17 @@ class TrajectoryNode(Node):
         
 
         # Define the matching initial joint/task positions.
-        self.q0 = np.radians(np.zeros(len(self.jointnames)))
+        self.q0 = np.radians(np.zeros(len(self.r_leg_joints)))
         #self.p0 = np.array([0.0, 0.55, 1.0])
         #self.R0 = Reye()
         (self.p0, self.R0, _, _) = self.r_leg_chain.fkin(self.q0)
 
+        # Hold the desired task pose at the origin with zero linear and
+        # angular velocity.  Rd is a rotation matrix, so zero rotation is
+        # represented by the identity matrix.
 
+        self.qc = self.q0
+        self.qcdot = self.q0
         ##############################################################
         # Setup the logistics of the node:
         # Add publishers to send the joint and task commands.  Also
@@ -140,9 +156,17 @@ class TrajectoryNode(Node):
         # COMPUTE THE TRAJECTORY AT THIS TIME INSTANCE.
 
         # # Stop everything after 11s - makes the graphing nicer.
-        if self.t > 11.0:
-            self.future.set_result("Trajectory has ended")
-            return
+        # if self.t > 11.0:
+        #     self.future.set_result("Trajectory has ended")
+        #     return
+        
+        # temp zeros for all joints
+        qc = np.zeros(len(self.all_joints))
+        qcdot = np.zeros(len(self.all_joints))
+        Rd = Reye()
+        pd = np.zeros(3)
+        vd = np.zeros(3)
+        wd = np.zeros(3)
 
 
         ##############################################################
@@ -153,7 +177,7 @@ class TrajectoryNode(Node):
         header=Header(stamp=self.now.to_msg(), frame_id='world')
         self.pubjoint.publish(JointState(
             header=header,
-            name=self.jointnames,
+            name=self.all_joints, # CHANGE WHEN NOT ALL JOINTS
             position=qc.tolist(),
             velocity=qcdot.tolist()))
         self.pubpose.publish(PoseStamped(
